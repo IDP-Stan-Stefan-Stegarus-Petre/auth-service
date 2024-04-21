@@ -9,9 +9,7 @@ using MobyLabWebProgramming.Infrastructure.Services.Interfaces;
 using MobyLabWebProgramming.Core.Errors;
 using MobyLabWebProgramming.Core.Responses;
 using System.Net;
-using System.Net.Http.Json;
 using MobyLabWebProgramming.Core.Entities;
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using MobyLabWebProgramming.Core.Enums;
 
@@ -20,33 +18,38 @@ namespace MobyLabWebProgramming.Infrastructure.Services.Implementations;
 public class LoginService : ILoginService
 {
     private readonly JwtConfiguration _jwtConfiguration;
+    private readonly DbReadWriteServiceConfiguration _dbReadWriteServiceConfiguration;
 
     /// <summary>
     /// Inject the required service configuration from the application.json or environment variables.
     /// </summary>
-    public LoginService(IOptions<JwtConfiguration> jwtConfiguration) => _jwtConfiguration = jwtConfiguration.Value;
+    public LoginService(IOptions<JwtConfiguration> jwtConfiguration, IOptions<DbReadWriteServiceConfiguration> dbReadWriteServiceConfiguration)
+    {
+        _jwtConfiguration = jwtConfiguration.Value;
+        _dbReadWriteServiceConfiguration = dbReadWriteServiceConfiguration.Value;
+    }
 
     public async Task<ServiceResponse<LoginResponseDTO>> Login(LoginDTO login, CancellationToken cancellationToken = default)
     {
         //  result from here is the user from the database.
 
-        User? result = new User(); // Assuming User is the class representing the user model.
+        var result = new User(); // Assuming User is the class representing the user model.
 
-        using (HttpClient client = new HttpClient())
+        using (var client = new HttpClient())
         {
             try
             {
-                var link = "http://localhost:5000/api/User/GetByEmail/mail/" + login.Email;
+                var link = _dbReadWriteServiceConfiguration.BaseUrl + "/api/User/GetByEmail/mail/" + login.Email;
                 var response = await client.GetAsync(link, cancellationToken); // Make a request to the user service to get the user by email.
                 if (response.IsSuccessStatusCode)
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
                     // Deserialize the JSON into an object
                     var jsonObject = JsonConvert.DeserializeObject<dynamic>(responseBody);
 
                     // Access the response field
-                    var responseData = jsonObject.response;
+                    var responseData = jsonObject?.response;
 
                     // map data from responseData to result variable
                     if (responseData != null)
@@ -56,10 +59,7 @@ public class LoginService : ILoginService
                         result.Password = responseData.password;
                         result.Name = responseData.name;
                         result.PhoneNumber = responseData.phoneNumber;
-                        if (responseData.role == "Admin")
-                            result.Role = UserRoleEnum.Admin;
-                        else
-                            result.Role = UserRoleEnum.User;
+                        result.Role = responseData.role == "Admin" ? UserRoleEnum.Admin : UserRoleEnum.User;
                     }
                 }
             }
@@ -67,11 +67,6 @@ public class LoginService : ILoginService
             {
                 return ServiceResponse<LoginResponseDTO>.FromError(new(HttpStatusCode.NotFound, ex.Message, ErrorCodes.CannotSee)); // Pack the proper error as the response.
             }
-        }
-
-        if (result == null) // Verify if the user is found in the database.
-        {
-            return ServiceResponse<LoginResponseDTO>.FromError(CommonErrors.UserNotFound); // Pack the proper error as the response.
         }
 
         if (result.Password != login.Password) // Verify if the password hash of the request is the same as the one in the database.
