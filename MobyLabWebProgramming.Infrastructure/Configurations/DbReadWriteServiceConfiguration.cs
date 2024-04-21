@@ -3,7 +3,7 @@
 /// <summary>
 /// This class is used to configure the mail client for sending emails.
 /// </summary>
-public class MailConfiguration
+public class DbReadWriteServiceConfiguration
 {
     /// <summary>
     /// MailEnable specifies if the mail client should send the mail or simply ignore it such that no mail is send while testing the backend.

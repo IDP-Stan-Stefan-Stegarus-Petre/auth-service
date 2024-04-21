@@ -9,14 +9,7 @@ namespace MobyLabWebProgramming.Core.Errors;
 public enum ErrorCodes
 {
     Unknown,
-    TechnicalError,
     EntityNotFound,
-    PhysicalFileNotFound,
-    UserAlreadyExists,
     WrongPassword,
-    CannotAdd,
-    CannotUpdate,
-    CannotDelete,
-    MailSendFailed,
     CannotSee
 }

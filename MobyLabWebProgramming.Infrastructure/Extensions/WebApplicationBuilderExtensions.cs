@@ -1,10 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MobyLabWebProgramming.Infrastructure.Configurations;
-using MobyLabWebProgramming.Infrastructure.Database;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
@@ -22,21 +20,6 @@ namespace MobyLabWebProgramming.Infrastructure.Extensions;
 
 public static class WebApplicationBuilderExtensions
 {
-    /// <summary>
-    /// This extension method adds the database configuration and repository to the application builder.
-    /// </summary>
-    public static WebApplicationBuilder AddRepository(this WebApplicationBuilder builder)
-    {
-        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); // This is used to avoid some errors with the timezone when working with timestamps.
-
-        builder.Services.AddDbContext<WebAppDatabaseContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("WebAppDatabase"), // This gets the connection string from ConnectionStrings.WebAppDatabase in appsettings.json.
-                o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery)
-                    .CommandTimeout((int)TimeSpan.FromMinutes(15).TotalSeconds)));
-
-        return builder;
-    }
-
     /// <summary>
     /// This extension method adds the CORS configuration to the application builder.
     /// </summary>
@@ -162,8 +145,7 @@ public static class WebApplicationBuilderExtensions
     public static WebApplicationBuilder AddServices(this WebApplicationBuilder builder)
     {
         builder.Services.Configure<JwtConfiguration>(builder.Configuration.GetSection(nameof(JwtConfiguration)));
-        builder.Services.Configure<FileStorageConfiguration>(builder.Configuration.GetSection(nameof(FileStorageConfiguration)));
-        builder.Services.Configure<MailConfiguration>(builder.Configuration.GetSection(nameof(MailConfiguration)));
+        builder.Services.Configure<DbReadWriteServiceConfiguration>(builder.Configuration.GetSection(nameof(DbReadWriteServiceConfiguration)));
         builder.Services
             .AddTransient<ILoginService, LoginService>();
 
