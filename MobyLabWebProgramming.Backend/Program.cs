@@ -6,7 +6,6 @@ builder.AddCorsConfiguration()
     .AddAuthorizationWithSwagger("MobyLab Web App")
     .AddServices()
     .UseLogger()
-    .AddWorkers()
     .AddApi();
 
 var app = builder.Build();

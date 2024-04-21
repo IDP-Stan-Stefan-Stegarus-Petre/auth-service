@@ -174,12 +174,4 @@ public static class WebApplicationBuilderExtensions
 
         return builder;
     }
-
-    /// <summary>
-    /// This extension method adds asynchronous workers to the application builder.
-    /// </summary>
-    public static WebApplicationBuilder AddWorkers(this WebApplicationBuilder builder)
-    {
-        return builder;
-    }
 }
